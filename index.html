@@ -31,17 +31,31 @@
   <div id="result"></div>
 
   <script>
-    document.getElementById("shortenForm").addEventListener("submit", async (e) => {
+    // Replace this with your actual Worker URL
+    const WORKER_URL = "https://shortlinkr.caleb-martinez.workers.dev";
+
+    const form = document.getElementById("shortenForm");
+    const urlInput = document.getElementById("urlInput");
+    const resultDiv = document.getElementById("result");
+
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const url = document.getElementById("urlInput").value;
-      const res = await fetch("https://shortlinkr.caleb-martinez.workers.dev/shorten", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url })
-      });
-      const data = await res.json();
-      document.getElementById("result").innerHTML =
-        `Short link: <a href="${data.short}" target="_blank">${data.short}</a>`;
+      const longUrl = urlInput.value;
+
+      try {
+        const res = await fetch(`${WORKER_URL}/shorten`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: longUrl })
+        });
+
+        if (!res.ok) throw new Error("Failed to shorten URL");
+
+        const data = await res.json();
+        resultDiv.innerHTML = `Short link: <a href="${data.short}" target="_blank">${data.short}</a>`;
+      } catch (err) {
+        resultDiv.textContent = "Error: " + err.message;
+      }
     });
   </script>
 </body>
