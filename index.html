@@ -34,7 +34,7 @@
     document.getElementById("shortenForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       const url = document.getElementById("urlInput").value;
-      const res = await fetch("https://your-worker.your-subdomain.workers.dev/shorten", {
+      const res = await fetch("https://shortlinkr.caleb-martinez.workers.dev/shorten", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url })
