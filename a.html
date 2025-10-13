@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Website Downloader</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
+  h1 { margin-bottom: 20px; }
+  input, button { padding: 8px; font-size: 14px; margin: 5px 0; }
+  #log { margin-top: 10px; white-space: pre-wrap; background: #222; color: #0f0; padding: 10px; border-radius: 5px; max-height: 300px; overflow:auto; }
+</style>
+</head>
+<body>
+<h1>Website Downloader</h1>
+<input type="text" id="urlInput" placeholder="Enter full URL, e.g., https://example.com" style="width: 80%;">
+<button id="downloadBtn">Download Website</button>
+<div id="log"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.11.0/jszip.min.js"></script>
+<script>
+const log = (msg) => {
+  document.getElementById('log').textContent += msg + '\n';
+};
+
+async function fetchText(url) {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
+    return await res.text();
+  } catch(e) {
+    log('Error fetching ' + url + ': ' + e.message);
+    return '';
+  }
+}
+
+async function downloadWebsite() {
+  const url = document.getElementById('urlInput').value.trim();
+  if (!url) { alert('Enter a valid URL'); return; }
+
+  log('Fetching HTML...');
+  const htmlText = await fetchText(url);
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(htmlText, 'text/html');
+
+  const zip = new JSZip();
+  zip.file('index.html', htmlText);
+
+  const cssLinks = Array.from(doc.querySelectorAll('link[rel="stylesheet"]')).map(l => l.href);
+  const jsLinks = Array.from(doc.querySelectorAll('script[src]')).map(s => s.src);
+
+  const fetchResources = async (urls, folderName, ext) => {
+    const folder = zip.folder(folderName);
+    for (const u of urls) {
+      log('Fetching ' + u);
+      const content = await fetchText(u);
+      const name = u.split('/').pop().split('?')[0] || ('file.' + ext);
+      folder.file(name, content);
+    }
+  };
+
+  await fetchResources(cssLinks, 'css', 'css');
+  await fetchResources(jsLinks, 'js', 'js');
+
+  log('Generating ZIP...');
+  const blob = await zip.generateAsync({type:"blob"});
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'website.zip';
+  link.click();
+  log('Download started.');
+}
+
+document.getElementById('downloadBtn').onclick = downloadWebsite;
+</script>
+</body>
+</html>
